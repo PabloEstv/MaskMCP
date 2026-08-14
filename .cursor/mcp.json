@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "maskmcp": {
+      "command": "node",
+      "args": [
+        "/Users/pabloestevezvillafuerte/Desktop/Proyectos/MaskMCP/dist/index.js"
+      ]
+    }
+  }
+}

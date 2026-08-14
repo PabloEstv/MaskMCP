@@ -1,0 +1,11 @@
+src/
+estado.md
+.env
+.env.*
+vault.json
+.cursor/
+*.tmp
+.vault.*.tmp
+*.log
+.DS_Store
+tsconfig.json

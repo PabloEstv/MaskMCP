@@ -37,3 +37,11 @@ CLI interactiva (Fase 4).
 - **Qué:** router MCP vs CLI; comandos `init`, `set`, `get`, `list`, `remove`, `setup-cursor` y `serve`; master key solo por env o prompt (opcional en `.cursor/mcp.json` env).
 - **Archivos:** `src/index.ts`, `src/cli/*`, `package.json`, `README.md`.
 - **Estado:** CLI lista. `maskmcp` sin args sigue siendo el servidor stdio.
+
+## Cambio 6 — 2026-08-14
+
+Empaquetado y docs para npm/GitHub (Fase 6).
+
+- **Qué:** `maskmcp@1.0.0`, LICENSE MIT (Pablo Estévez Sanz), README en inglés, `files`/`publishConfig`, ignores de vault/env/tmp, script `npm test`.
+- **Archivos:** `package.json`, `LICENSE`, `README.md`, `.gitignore`, `.npmignore`, `src/config.ts`.
+- **Estado:** listo para publicar. No se ha ejecutado `npm publish` ni push.

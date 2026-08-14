@@ -6,3 +6,7 @@ cache/
 *.pyc
 *.log
 .DS_Store
+vault.json
+**/.maskmcp/
+*.tmp
+.vault.*.tmp

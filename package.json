@@ -1,16 +1,24 @@
 {
   "name": "maskmcp",
-  "version": "0.1.0",
-  "description": "Servidor MCP local-first para gestionar secretos y credenciales de forma segura",
+  "version": "1.0.0",
+  "description": "Zero-knowledge, local-first MCP vault for AI agents and secret masking in Cursor/Claude",
   "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "bin": {
     "maskmcp": "./dist/index.js"
   },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc",
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
     "cli": "tsx src/index.ts",
+    "test": "npm run test:vault && npm run test:tools",
     "test:vault": "tsx src/core/test-vault.ts",
     "test:tools": "tsx src/tools/test-tools.ts"
   },
@@ -19,11 +27,26 @@
   },
   "keywords": [
     "mcp",
+    "model-context-protocol",
+    "cursor",
     "secrets",
-    "credentials",
-    "local-first"
+    "vault",
+    "security",
+    "zero-knowledge"
   ],
   "license": "MIT",
+  "author": "Pablo Estévez Sanz",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PabloEstv/MaskMCP.git"
+  },
+  "bugs": {
+    "url": "https://github.com/PabloEstv/MaskMCP/issues"
+  },
+  "homepage": "https://github.com/PabloEstv/MaskMCP#readme",
+  "publishConfig": {
+    "access": "public"
+  },
   "dependencies": {
     "@clack/prompts": "^1.7.0",
     "@modelcontextprotocol/sdk": "^1.30.0",

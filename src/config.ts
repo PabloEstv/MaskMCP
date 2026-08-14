@@ -2,7 +2,7 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 
 export const APP_NAME = "maskmcp";
-export const APP_VERSION = "0.1.0";
+export const APP_VERSION = "1.0.0";
 
 export const DATA_DIR = join(homedir(), ".maskmcp");
 export const DATA_DIR_MODE = 0o700;
