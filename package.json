@@ -10,7 +10,8 @@
     "build": "tsc",
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
-    "test:vault": "tsx src/core/test-vault.ts"
+    "test:vault": "tsx src/core/test-vault.ts",
+    "test:tools": "tsx src/tools/test-tools.ts"
   },
   "engines": {
     "node": ">=20"
