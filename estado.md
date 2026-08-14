@@ -29,3 +29,11 @@ Herramientas MCP de secretos (Fase 3).
 - **Qué:** tools `mask_list_secrets`, `mask_has_secret`, `mask_set_secret`, `mask_get_secret`, `mask_remove_secret` y `mask_export_template` con Zod; `masterKey` por argumento o `MASKMCP_MASTER_KEY`; test de integración en memoria.
 - **Archivos:** `src/tools/helpers.ts`, `src/tools/list.ts`, `src/tools/has.ts`, `src/tools/set.ts`, `src/tools/get.ts`, `src/tools/remove.ts`, `src/tools/template.ts`, `src/tools/index.ts`, `src/tools/test-tools.ts`, `package.json`, `README.md`.
 - **Estado:** tools MCP listas. `ping` se mantiene.
+
+## Cambio 5 — 2026-08-14
+
+CLI interactiva (Fase 4).
+
+- **Qué:** router MCP vs CLI; comandos `init`, `set`, `get`, `list`, `remove`, `setup-cursor` y `serve`; master key solo por env o prompt (opcional en `.cursor/mcp.json` env).
+- **Archivos:** `src/index.ts`, `src/cli/*`, `package.json`, `README.md`.
+- **Estado:** CLI lista. `maskmcp` sin args sigue siendo el servidor stdio.

@@ -4,12 +4,13 @@
   "description": "Servidor MCP local-first para gestionar secretos y credenciales de forma segura",
   "type": "module",
   "bin": {
-    "maskmcp": "dist/index.js"
+    "maskmcp": "./dist/index.js"
   },
   "scripts": {
     "build": "tsc",
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
+    "cli": "tsx src/index.ts",
     "test:vault": "tsx src/core/test-vault.ts",
     "test:tools": "tsx src/tools/test-tools.ts"
   },
@@ -24,7 +25,9 @@
   ],
   "license": "MIT",
   "dependencies": {
+    "@clack/prompts": "^1.7.0",
     "@modelcontextprotocol/sdk": "^1.30.0",
+    "commander": "^15.0.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {

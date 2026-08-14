@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 
+import { runCli } from "./cli/index.js";
 import { startServer } from "./server.js";
 
-async function main(): Promise<void> {
+async function startMcpServer(): Promise<void> {
   const server = await startServer();
 
   const shutdown = async (signal: string): Promise<void> => {
@@ -21,6 +22,15 @@ async function main(): Promise<void> {
   process.on("SIGTERM", () => {
     void shutdown("SIGTERM");
   });
+}
+
+async function main(): Promise<void> {
+  const args = process.argv.slice(2);
+  if (args.length === 0 || args[0] === "serve") {
+    await startMcpServer();
+    return;
+  }
+  await runCli(args);
 }
 
 main().catch((error: unknown) => {

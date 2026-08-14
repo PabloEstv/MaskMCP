@@ -2,7 +2,7 @@
 
 Servidor MCP **local-first** para gestionar secretos y credenciales de forma segura para agentes de IA y Cursor.
 
-Comunica por **stdio** (JSON-RPC). No escribas logs en `stdout`: está reservado al protocolo. Usa `stderr`.
+Sin argumentos (o `serve`) arranca el servidor MCP por **stdio**. No escribas logs en `stdout` en ese modo. Los subcomandos CLI sí usan la terminal.
 
 ## Requisitos
 
@@ -17,7 +17,22 @@ npm run dev         # ejecuta con tsx en watch
 npm start           # arranca dist/index.js
 npm run test:vault  # verifica cifrado AES-256-GCM y persistencia local
 npm run test:tools  # verifica las herramientas MCP en memoria
+npm run cli -- list # CLI (tsx)
 ```
+
+## CLI
+
+```bash
+maskmcp init
+maskmcp set ALIAS [value]
+maskmcp get ALIAS
+maskmcp list
+maskmcp remove ALIAS
+maskmcp setup-cursor --print
+maskmcp serve
+```
+
+La master key se toma de `MASKMCP_MASTER_KEY` o se pide oculta. No se guarda en `~/.maskmcp`; `setup-cursor` puede incluirla solo en el `env` de `.cursor/mcp.json`.
 
 ## Vault local
 
@@ -53,8 +68,8 @@ Añade esto en `~/.cursor/mcp.json` (ajusta la ruta absoluta):
 }
 ```
 
-Tras `npm run build`, Cursor debe listar las herramientas `mask_*`.
+Tras `npm run build`, usa `maskmcp setup-cursor` para generar este JSON, o `maskmcp setup-cursor --write` para crear `./.cursor/mcp.json`.
 
 ## Estado
 
-Herramientas MCP de secretos implementadas. Ver `estado.md`.
+CLI y servidor MCP listos. Ver `estado.md`.
