@@ -1,12 +1,12 @@
 {
-  "name": "maskmcp",
+  "name": "@pablo_estv/maskmcp",
   "version": "1.0.0",
   "description": "Zero-knowledge, local-first MCP vault for AI agents and secret masking in Cursor/Claude",
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "bin": {
-    "maskmcp": "./dist/index.js"
+    "maskmcp": "dist/index.js"
   },
   "files": [
     "dist",

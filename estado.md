@@ -45,3 +45,11 @@ Empaquetado y docs para npm/GitHub (Fase 6).
 - **Qué:** `maskmcp@1.0.0`, LICENSE MIT (Pablo Estévez Sanz), README en inglés, `files`/`publishConfig`, ignores de vault/env/tmp, script `npm test`.
 - **Archivos:** `package.json`, `LICENSE`, `README.md`, `.gitignore`, `.npmignore`, `src/config.ts`.
 - **Estado:** listo para publicar. No se ha ejecutado `npm publish` ni push.
+
+## Cambio 7 — 2026-08-15
+
+README apunta al paquete npm publicado `@pablo_estv/maskmcp`.
+
+- **Qué:** `npx @pablo_estv/maskmcp`, install global, badge/enlace npm, y `mcp.json` con `npx -y @pablo_estv/maskmcp`.
+- **Archivos:** `README.md`.
+- **Estado:** docs alineadas con el nombre oficial en npm.
