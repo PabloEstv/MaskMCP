@@ -7,3 +7,6 @@ export {
   generateRandomToken,
 } from "./crypto.js";
 export { LocalVaultManager } from "./vault.js";
+export { confidentialFetch } from "./egress.js";
+export { redactSecret } from "./redact.js";
+export { assertSafeHttpsUrl, SsrfError } from "./ssrf.js";

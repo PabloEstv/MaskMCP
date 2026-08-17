@@ -5,11 +5,11 @@ import { ok, toErrorResult } from "./helpers.js";
 export function registerListSecretsTool(server: McpServer, vault: LocalVaultManager): void {
   server.tool(
     "mask_list_secrets",
-    "Lista los alias de secretos en la bóveda (sin valores)",
+    "Lista alias y dominios permitidos (sin valores)",
     async () => {
       try {
-        const aliases = await vault.listAliases();
-        return ok(JSON.stringify(aliases));
+        const secrets = await vault.listSecrets();
+        return ok(JSON.stringify(secrets));
       } catch (error) {
         return toErrorResult(error);
       }

@@ -53,3 +53,19 @@ README apunta al paquete npm publicado `@pablo_estv/maskmcp`.
 - **Qué:** `npx @pablo_estv/maskmcp`, install global, badge/enlace npm, y `mcp.json` con `npx -y @pablo_estv/maskmcp`.
 - **Archivos:** `README.md`.
 - **Estado:** docs alineadas con el nombre oficial en npm.
+
+## Cambio 8 — 2026-08-17
+
+MaskMCP 2.0.0 Confidential Egress Proxy.
+
+- **Qué:** vault v2 con alias estrictos y `allowedDomains`; MCP sin get/set/remove; `mask_fetch` anti-SSRF + redacción (incluye `encodeURIComponent`); CLI `--domains`; setup-cursor no imprime la master key y añade `.cursor/mcp.json` al `.gitignore`.
+- **Archivos:** `src/core/*`, `src/tools/*`, `src/cli/*`, `package.json`, `README.md`, `.gitignore`.
+- **Estado:** 2.0.0. Secretos no salen al LLM; el egreso HTTPS está allowlisteado.
+
+## Cambio 9 — 2026-08-17
+
+Auditoría y puesta a punto 2.0.0.
+
+- **Qué:** shebang + auto-run `isMain` en `src/cli/index.ts`; `bin` `./dist/index.js` (router MCP/CLI); anti-SSRF IPv6 ULA sin falsos positivos en hostnames `fc*`/`fd*`.
+- **Archivos:** `src/cli/index.ts`, `package.json`, `src/core/ssrf.ts`, `estado.md`.
+- **Estado:** CLI ejecutable vía `dist/cli/index.js`; el binario publicado sigue siendo `dist/index.js` para stdio.

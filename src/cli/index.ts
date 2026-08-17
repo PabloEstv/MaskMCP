@@ -1,3 +1,7 @@
+#!/usr/bin/env node
+
+import { resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { Command } from "commander";
 import { APP_NAME, APP_VERSION } from "../config.js";
 import { formatCliError } from "./errors.js";
@@ -24,8 +28,9 @@ export async function runCli(argv: string[]): Promise<void> {
     .description("Registra o actualiza un secreto")
     .argument("<alias>", "Identificador del secreto")
     .argument("[value]", "Valor (si se omite, se pide oculto)")
-    .action(async (alias: string, value?: string) => {
-      await runSet(alias, value);
+    .option("--domains <list>", "Dominios permitidos separados por coma")
+    .action(async (alias: string, value: string | undefined, options: { domains?: string }) => {
+      await runSet(alias, value, options.domains);
     });
 
   program
@@ -36,7 +41,7 @@ export async function runCli(argv: string[]): Promise<void> {
       await runGet(alias);
     });
 
-  program.command("list").description("Lista alias y fechas").action(async () => {
+  program.command("list").description("Lista alias, dominios permitidos y fechas").action(async () => {
     await runList();
   });
 
@@ -69,4 +74,16 @@ export async function runCli(argv: string[]): Promise<void> {
     console.error(`[maskmcp] ${formatCliError(error)}`);
     process.exitCode = 1;
   }
+}
+
+function isMainModule(): boolean {
+  const entry = process.argv[1];
+  if (!entry) {
+    return false;
+  }
+  return fileURLToPath(import.meta.url) === resolve(entry);
+}
+
+if (isMainModule()) {
+  void runCli(process.argv.slice(2));
 }

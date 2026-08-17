@@ -3,7 +3,6 @@ import { join } from "node:path";
 import { confirm, password } from "@clack/prompts";
 import { CliError } from "./errors.js";
 import { exitIfCancel } from "./master-key.js";
-import { resolveServerEntry } from "./paths.js";
 
 export type SetupCursorOptions = {
   print?: boolean;
@@ -16,12 +15,9 @@ type McpConfigFile = {
 };
 
 export async function runSetupCursor(options: SetupCursorOptions): Promise<void> {
-  const serverEntry = resolveServerEntry();
   const masterKey = await resolveOptionalMasterKey(options);
-  const snippet = buildMcpSnippet(serverEntry, masterKey);
-  const json = JSON.stringify({ mcpServers: { maskmcp: snippet } }, null, 2);
-
-  console.log(json);
+  const snippet = buildMcpSnippet(masterKey);
+  console.log(JSON.stringify({ mcpServers: { maskmcp: printableSnippet(snippet) } }, null, 2));
 
   if (options.print && !options.write) {
     return;
@@ -43,7 +39,8 @@ export async function runSetupCursor(options: SetupCursorOptions): Promise<void>
   }
 
   await writeProjectMcpConfig(snippet);
-  console.log("Updated ./.cursor/mcp.json");
+  await ensureGitignoreIgnoresMcpJson();
+  console.error("[maskmcp] updated ./.cursor/mcp.json");
 }
 
 async function resolveOptionalMasterKey(options: SetupCursorOptions): Promise<string | undefined> {
@@ -76,15 +73,27 @@ async function resolveOptionalMasterKey(options: SetupCursorOptions): Promise<st
   return entered;
 }
 
-function buildMcpSnippet(serverEntry: string, masterKey?: string): Record<string, unknown> {
+function buildMcpSnippet(masterKey?: string): Record<string, unknown> {
   const snippet: Record<string, unknown> = {
-    command: "node",
-    args: [serverEntry],
+    command: "npx",
+    args: ["-y", "@pablo_estv/maskmcp"],
   };
   if (masterKey) {
     snippet.env = { MASKMCP_MASTER_KEY: masterKey };
   }
   return snippet;
+}
+
+function printableSnippet(snippet: Record<string, unknown>): Record<string, unknown> {
+  const env = snippet.env;
+  if (!env || typeof env !== "object") {
+    return snippet;
+  }
+  const redacted: Record<string, string> = {};
+  for (const [key, value] of Object.entries(env as Record<string, unknown>)) {
+    redacted[key] = key === "MASKMCP_MASTER_KEY" ? "[REDACTED]" : String(value);
+  }
+  return { ...snippet, env: redacted };
 }
 
 async function writeProjectMcpConfig(snippet: Record<string, unknown>): Promise<void> {
@@ -111,6 +120,27 @@ async function writeProjectMcpConfig(snippet: Record<string, unknown>): Promise<
 
   const mode = snippet.env ? 0o600 : 0o644;
   await writeFile(file, `${JSON.stringify(next, null, 2)}\n`, { encoding: "utf8", mode });
+}
+
+async function ensureGitignoreIgnoresMcpJson(): Promise<void> {
+  const gitignorePath = join(process.cwd(), ".gitignore");
+  let raw: string;
+  try {
+    raw = await readFile(gitignorePath, "utf8");
+  } catch (error) {
+    if (isNotFound(error)) {
+      return;
+    }
+    throw new CliError("Unable to update .gitignore");
+  }
+
+  const lines = raw.split(/\r?\n/).map((line) => line.trim());
+  if (lines.includes(".cursor/mcp.json")) {
+    return;
+  }
+  const suffix = raw.length === 0 || raw.endsWith("\n") ? "" : "\n";
+  await writeFile(gitignorePath, `${raw}${suffix}.cursor/mcp.json\n`);
+  console.error("[maskmcp] added .cursor/mcp.json to .gitignore");
 }
 
 function isNotFound(error: unknown): boolean {

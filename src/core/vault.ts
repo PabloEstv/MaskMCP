@@ -3,8 +3,14 @@ import { access, chmod, mkdir, readFile, rename, unlink, writeFile } from "node:
 import { dirname, join } from "node:path";
 import { DATA_DIR_MODE, VAULT_FILE_MODE, VAULT_PATH } from "../config.js";
 import { decryptSecret, encryptSecret } from "./crypto.js";
+import { normalizeDomain } from "./ssrf.js";
 import type { EncryptedData, SecretEntry, VaultSchema } from "./types.js";
-import { VAULT_SCHEMA_VERSION } from "./types.js";
+import {
+  ALIAS_PATTERN,
+  LEGACY_VAULT_SCHEMA_VERSION,
+  RESERVED_ALIASES,
+  VAULT_SCHEMA_VERSION,
+} from "./types.js";
 
 export class LocalVaultManager {
   private readonly vaultPath: string;
@@ -28,24 +34,25 @@ export class LocalVaultManager {
     alias: string,
     value: string,
     masterKey: string,
-    metadata?: Record<string, string>,
+    allowedDomains: string[] = [],
   ): Promise<void> {
     assertAlias(alias);
+    const domains = allowedDomains.map(normalizeDomain);
     await this.withLock(async () => {
       const vault = await this.readVault();
       const now = new Date().toISOString();
       const existing = vault.secrets[alias];
-      const encryptedValue = await encryptSecret(value, masterKey);
-      const entry: SecretEntry = {
+      const encrypted = await encryptSecret(value, masterKey);
+      vault.secrets[alias] = {
         alias,
-        encryptedValue,
+        encryptedValue: encrypted.ciphertext,
+        iv: encrypted.iv,
+        tag: encrypted.tag,
+        salt: encrypted.salt,
+        allowedDomains: domains,
         createdAt: existing?.createdAt ?? now,
         updatedAt: now,
       };
-      if (metadata) {
-        entry.metadata = metadata;
-      }
-      vault.secrets[alias] = entry;
       vault.updatedAt = now;
       await this.writeVault(vault);
     });
@@ -54,27 +61,37 @@ export class LocalVaultManager {
   async getSecret(alias: string, masterKey: string): Promise<string | null> {
     assertAlias(alias);
     const vault = await this.readVault();
-    const entry = vault.secrets[alias];
+    const entry = Object.hasOwn(vault.secrets, alias) ? vault.secrets[alias] : undefined;
     if (!entry) {
       return null;
     }
-    return decryptSecret(entry.encryptedValue, masterKey);
+    return decryptSecret(toEncryptedData(entry), masterKey);
   }
 
-  async listAliases(): Promise<Array<{ alias: string; createdAt: string; updatedAt: string }>> {
+  async getEntry(alias: string): Promise<SecretEntry | null> {
+    assertAlias(alias);
     const vault = await this.readVault();
-    return Object.values(vault.secrets).map(({ alias, createdAt, updatedAt }) => ({
+    return Object.hasOwn(vault.secrets, alias) ? vault.secrets[alias] : null;
+  }
+
+  async listSecrets(): Promise<Array<{ alias: string; allowedDomains: string[]; updatedAt: string }>> {
+    const vault = await this.readVault();
+    return Object.values(vault.secrets).map(({ alias, allowedDomains, updatedAt }) => ({
       alias,
-      createdAt,
+      allowedDomains,
       updatedAt,
     }));
+  }
+
+  async listAliases(): Promise<Array<{ alias: string; allowedDomains: string[]; updatedAt: string }>> {
+    return this.listSecrets();
   }
 
   async removeSecret(alias: string): Promise<boolean> {
     assertAlias(alias);
     return this.withLock(async () => {
       const vault = await this.readVault();
-      if (!(alias in vault.secrets)) {
+      if (!Object.hasOwn(vault.secrets, alias)) {
         return false;
       }
       delete vault.secrets[alias];
@@ -87,7 +104,7 @@ export class LocalVaultManager {
   async hasSecret(alias: string): Promise<boolean> {
     assertAlias(alias);
     const vault = await this.readVault();
-    return alias in vault.secrets;
+    return Object.hasOwn(vault.secrets, alias);
   }
 
   private async doInit(): Promise<void> {
@@ -145,8 +162,11 @@ function emptyVault(): VaultSchema {
   };
 }
 
-function assertAlias(alias: string): void {
-  if (typeof alias !== "string" || alias.length === 0) {
+export function assertAlias(alias: string): void {
+  if (typeof alias !== "string" || !ALIAS_PATTERN.test(alias)) {
+    throw new Error("Invalid alias");
+  }
+  if (RESERVED_ALIASES.has(alias.toLowerCase())) {
     throw new Error("Invalid alias");
   }
 }
@@ -159,17 +179,16 @@ function parseVault(raw: string): VaultSchema {
     throw new Error("Vault file is corrupted");
   }
 
-  if (!isRecord(parsed) || parsed.version !== VAULT_SCHEMA_VERSION || !isRecord(parsed.secrets)) {
+  if (!isRecord(parsed) || !isRecord(parsed.secrets) || typeof parsed.updatedAt !== "string") {
     throw new Error("Vault file is corrupted");
   }
-  if (typeof parsed.updatedAt !== "string") {
+  if (parsed.version !== VAULT_SCHEMA_VERSION && parsed.version !== LEGACY_VAULT_SCHEMA_VERSION) {
     throw new Error("Vault file is corrupted");
   }
 
   const secrets: Record<string, SecretEntry> = {};
   for (const [key, value] of Object.entries(parsed.secrets)) {
-    const entry = parseSecretEntry(key, value);
-    secrets[key] = entry;
+    secrets[key] = parseSecretEntry(key, value);
   }
 
   return {
@@ -186,25 +205,63 @@ function parseSecretEntry(key: string, value: unknown): SecretEntry {
   if (typeof value.createdAt !== "string" || typeof value.updatedAt !== "string") {
     throw new Error("Vault file is corrupted");
   }
-  if (!isEncryptedData(value.encryptedValue)) {
-    throw new Error("Vault file is corrupted");
+
+  const cryptoFields = extractCryptoFields(value);
+  let allowedDomains: string[] = [];
+  if (Array.isArray(value.allowedDomains)) {
+    allowedDomains = value.allowedDomains.flatMap((item) => {
+      if (typeof item !== "string") {
+        return [];
+      }
+      try {
+        return [normalizeDomain(item)];
+      } catch {
+        return [];
+      }
+    });
   }
 
-  const entry: SecretEntry = {
+  return {
     alias: key,
-    encryptedValue: value.encryptedValue,
+    encryptedValue: cryptoFields.ciphertext,
+    iv: cryptoFields.iv,
+    tag: cryptoFields.tag,
+    salt: cryptoFields.salt,
+    allowedDomains,
     createdAt: value.createdAt,
     updatedAt: value.updatedAt,
   };
+}
 
-  if (value.metadata !== undefined) {
-    if (!isStringRecord(value.metadata)) {
+function extractCryptoFields(value: Record<string, unknown>): EncryptedData {
+  if (typeof value.encryptedValue === "string") {
+    if (
+      typeof value.iv !== "string" ||
+      typeof value.tag !== "string" ||
+      typeof value.salt !== "string"
+    ) {
       throw new Error("Vault file is corrupted");
     }
-    entry.metadata = value.metadata;
+    return {
+      ciphertext: value.encryptedValue,
+      iv: value.iv,
+      tag: value.tag,
+      salt: value.salt,
+    };
   }
+  if (isEncryptedData(value.encryptedValue)) {
+    return value.encryptedValue;
+  }
+  throw new Error("Vault file is corrupted");
+}
 
-  return entry;
+function toEncryptedData(entry: SecretEntry): EncryptedData {
+  return {
+    ciphertext: entry.encryptedValue,
+    iv: entry.iv,
+    tag: entry.tag,
+    salt: entry.salt,
+  };
 }
 
 function isEncryptedData(value: unknown): value is EncryptedData {
@@ -221,11 +278,4 @@ function isEncryptedData(value: unknown): value is EncryptedData {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function isStringRecord(value: unknown): value is Record<string, string> {
-  if (!isRecord(value)) {
-    return false;
-  }
-  return Object.values(value).every((item) => typeof item === "string");
 }

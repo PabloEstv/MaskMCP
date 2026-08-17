@@ -10,3 +10,4 @@ vault.json
 **/.maskmcp/
 *.tmp
 .vault.*.tmp
+.cursor/mcp.json
